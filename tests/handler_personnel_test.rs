@@ -2,8 +2,7 @@
 
 #[cfg(test)]
 mod tests {
-    use backend::{models::*};
-    use serde_json::json;
+    use backend::models::*;
 
     #[test]
     fn test_create_employee_request_validation() {
@@ -107,7 +106,7 @@ mod tests {
     #[test]
     fn test_employee_role_validation() {
         let roles = vec!["Admin", "DepartmentHead", "DeputyHead", "Employee"];
-        
+
         for role in roles {
             let emp = Employee {
                 id: "test".to_string(),
@@ -124,8 +123,10 @@ mod tests {
                 created_at: None,
                 updated_at: None,
             };
-            
-            assert!(["Admin", "DepartmentHead", "DeputyHead", "Employee"].contains(&emp.role.as_str()));
+
+            assert!(
+                ["Admin", "DepartmentHead", "DeputyHead", "Employee"].contains(&emp.role.as_str())
+            );
         }
     }
 

@@ -16,13 +16,10 @@ mod tests {
         // This test checks if the URL is parsed correctly, not if connection succeeds
         let url = "mysql://root:password@localhost:3307/mydb";
         let result = create_pool(url);
-        
+
         // The pool creation might fail if MySQL is not running, but the URL should be valid
         match result {
-            Ok(_pool) => {
-                // If connection succeeds, that's good
-                assert!(true);
-            }
+            Ok(_pool) => {}
             Err(e) => {
                 // If it fails, it should be a connection error, not a URL parsing error
                 let error_msg = format!("{}", e);
@@ -41,8 +38,8 @@ mod tests {
             let conn_result = pool.get_conn();
             // Either succeeds or fails with connection error (not type error)
             match conn_result {
-                Ok(_) => assert!(true),
-                Err(_) => assert!(true), // Expected if DB not running
+                Ok(_) => println!("worked"),
+                Err(_) => println!("didn't"), // Expected if DB not running
             }
         }
     }

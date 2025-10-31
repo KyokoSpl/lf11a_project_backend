@@ -8,14 +8,26 @@ use dotenv::dotenv;
 use handler::{create_user, get_user_by_id, get_users, health};
 use handler_personnel::{
     // Employee endpoints
-    assign_manager, assign_salary_grade, create_employee, delete_employee, 
-    get_employee_by_id, get_employees, get_employees_by_department, update_employee,
+    assign_manager,
+    assign_salary_grade,
     // Department endpoints
-    create_department, delete_department, get_department_by_id, 
-    get_departments, update_department,
+    create_department,
+    create_employee,
     // Salary grade endpoints
-    create_salary_grade, delete_salary_grade, get_salary_grade_by_id, 
-    get_salary_grades, update_salary_grade,
+    create_salary_grade,
+    delete_department,
+    delete_employee,
+    delete_salary_grade,
+    get_department_by_id,
+    get_departments,
+    get_employee_by_id,
+    get_employees,
+    get_employees_by_department,
+    get_salary_grade_by_id,
+    get_salary_grades,
+    update_department,
+    update_employee,
+    update_salary_grade,
 };
 use std::env;
 

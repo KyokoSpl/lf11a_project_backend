@@ -1,8 +1,18 @@
-use actix_web::{get, post, put, delete, web, HttpResponse, Responder};
-use crate::models::*;
 use crate::db::DbPool;
+use crate::models::*;
+use actix_web::{HttpResponse, Responder, delete, get, post, put, web};
 use mysql::prelude::*;
 use uuid::Uuid;
+
+// Type aliases for complex database row types
+type DepartmentRow = (
+    String,
+    String,
+    Option<String>,
+    Option<String>,
+    Option<String>,
+);
+type SalaryGradeRow = (String, String, f64, Option<String>, Option<String>);
 
 // ==================== EMPLOYEE ENDPOINTS ====================
 
@@ -10,17 +20,22 @@ use uuid::Uuid;
 #[get("/api/employees")]
 pub async fn get_employees(
     pool: web::Data<DbPool>,
-    query: web::Query<std::collections::HashMap<String, String>>
+    query: web::Query<std::collections::HashMap<String, String>>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
-    let include_inactive = query.get("include_inactive").map(|v| v == "true").unwrap_or(false);
-    
+    let include_inactive = query
+        .get("include_inactive")
+        .map(|v| v == "true")
+        .unwrap_or(false);
+
     let query_str = if include_inactive {
         "SELECT id, first_name, last_name, email, department_id, salary_grade_id, manager_id, role, hire_date, active, deleted_at, created_at, updated_at FROM employees"
     } else {
@@ -28,11 +43,12 @@ pub async fn get_employees(
     };
 
     let rows: Result<Vec<mysql::Row>, mysql::Error> = conn.query(query_str);
-    
+
     match rows {
         Ok(rows) => {
-            let employees: Vec<Employee> = rows.into_iter().map(|mut row| {
-                Employee {
+            let employees: Vec<Employee> = rows
+                .into_iter()
+                .map(|mut row| Employee {
                     id: row.take("id").unwrap(),
                     first_name: row.take("first_name").unwrap(),
                     last_name: row.take("last_name").unwrap(),
@@ -46,27 +62,26 @@ pub async fn get_employees(
                     deleted_at: row.take("deleted_at").unwrap(),
                     created_at: row.take("created_at").unwrap(),
                     updated_at: row.take("updated_at").unwrap(),
-                }
-            }).collect();
+                })
+                .collect();
             HttpResponse::Ok().json(employees)
-        },
+        }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
 /// Get employee by ID
 #[get("/api/employees/{id}")]
-pub async fn get_employee_by_id(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>
-) -> impl Responder {
+pub async fn get_employee_by_id(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let rows: Result<Vec<mysql::Row>, mysql::Error> = conn.exec(
@@ -98,10 +113,10 @@ pub async fn get_employee_by_id(
                     "error": "Employee not found"
                 }))
             }
-        },
+        }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -109,13 +124,15 @@ pub async fn get_employee_by_id(
 #[post("/api/employees")]
 pub async fn create_employee(
     pool: web::Data<DbPool>,
-    employee: web::Json<CreateEmployeeRequest>
+    employee: web::Json<CreateEmployeeRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let id = Uuid::new_v4().to_string();
@@ -136,7 +153,7 @@ pub async fn create_employee(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -145,13 +162,15 @@ pub async fn create_employee(
 pub async fn update_employee(
     pool: web::Data<DbPool>,
     id: web::Path<String>,
-    employee: web::Json<UpdateEmployeeRequest>
+    employee: web::Json<UpdateEmployeeRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let mut updates = Vec::new();
@@ -211,26 +230,25 @@ pub async fn update_employee(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
 /// Delete employee (soft delete)
 #[delete("/api/employees/{id}")]
-pub async fn delete_employee(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>
-) -> impl Responder {
+pub async fn delete_employee(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let result = conn.exec_drop(
         "UPDATE employees SET active = FALSE, deleted_at = NOW() WHERE id = ?",
-        (id.as_str(),)
+        (id.as_str(),),
     );
 
     match result {
@@ -239,7 +257,7 @@ pub async fn delete_employee(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -248,18 +266,20 @@ pub async fn delete_employee(
 pub async fn assign_manager(
     pool: web::Data<DbPool>,
     id: web::Path<String>,
-    req: web::Json<AssignManagerRequest>
+    req: web::Json<AssignManagerRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let result = conn.exec_drop(
         "UPDATE employees SET manager_id = ? WHERE id = ?",
-        (&req.manager_id, id.as_str())
+        (&req.manager_id, id.as_str()),
     );
 
     match result {
@@ -268,7 +288,7 @@ pub async fn assign_manager(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -277,18 +297,20 @@ pub async fn assign_manager(
 pub async fn assign_salary_grade(
     pool: web::Data<DbPool>,
     id: web::Path<String>,
-    req: web::Json<AssignSalaryGradeRequest>
+    req: web::Json<AssignSalaryGradeRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let result = conn.exec_drop(
         "UPDATE employees SET salary_grade_id = ? WHERE id = ?",
-        (&req.salary_grade_id, id.as_str())
+        (&req.salary_grade_id, id.as_str()),
     );
 
     match result {
@@ -297,7 +319,7 @@ pub async fn assign_salary_grade(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -305,13 +327,15 @@ pub async fn assign_salary_grade(
 #[get("/api/departments/{id}/employees")]
 pub async fn get_employees_by_department(
     pool: web::Data<DbPool>,
-    id: web::Path<String>
+    id: web::Path<String>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let rows: Result<Vec<mysql::Row>, mysql::Error> = conn.exec(
@@ -321,8 +345,9 @@ pub async fn get_employees_by_department(
 
     match rows {
         Ok(rows) => {
-            let employees: Vec<Employee> = rows.into_iter().map(|mut row| {
-                Employee {
+            let employees: Vec<Employee> = rows
+                .into_iter()
+                .map(|mut row| Employee {
                     id: row.take("id").unwrap(),
                     first_name: row.take("first_name").unwrap(),
                     last_name: row.take("last_name").unwrap(),
@@ -336,13 +361,13 @@ pub async fn get_employees_by_department(
                     deleted_at: row.take("deleted_at").unwrap(),
                     created_at: row.take("created_at").unwrap(),
                     updated_at: row.take("updated_at").unwrap(),
-                }
-            }).collect();
+                })
+                .collect();
             HttpResponse::Ok().json(employees)
-        },
+        }
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -353,21 +378,29 @@ pub async fn get_employees_by_department(
 pub async fn get_departments(pool: web::Data<DbPool>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let result: Result<Vec<Department>, mysql::Error> = conn.query_map(
         "SELECT id, name, head_id, created_at, updated_at FROM departments",
-        |(id, name, head_id, created_at, updated_at)| Department { id, name, head_id, created_at, updated_at }
+        |(id, name, head_id, created_at, updated_at)| Department {
+            id,
+            name,
+            head_id,
+            created_at,
+            updated_at,
+        },
     );
 
     match result {
         Ok(departments) => HttpResponse::Ok().json(departments),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -375,21 +408,31 @@ pub async fn get_departments(pool: web::Data<DbPool>) -> impl Responder {
 #[get("/api/departments/{id}")]
 pub async fn get_department_by_id(
     pool: web::Data<DbPool>,
-    id: web::Path<String>
+    id: web::Path<String>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
-    let result: Result<Option<Department>, mysql::Error> = conn.exec_first(
-        "SELECT id, name, head_id, created_at, updated_at FROM departments WHERE id = ?",
-        (id.as_str(),)
-    ).map(|row: Option<(String, String, Option<String>, Option<String>, Option<String>)>| {
-        row.map(|(id, name, head_id, created_at, updated_at)| Department { id, name, head_id, created_at, updated_at })
-    });
+    let result: Result<Option<Department>, mysql::Error> = conn
+        .exec_first(
+            "SELECT id, name, head_id, created_at, updated_at FROM departments WHERE id = ?",
+            (id.as_str(),),
+        )
+        .map(|row: Option<DepartmentRow>| {
+            row.map(|(id, name, head_id, created_at, updated_at)| Department {
+                id,
+                name,
+                head_id,
+                created_at,
+                updated_at,
+            })
+        });
 
     match result {
         Ok(Some(department)) => HttpResponse::Ok().json(department),
@@ -398,7 +441,7 @@ pub async fn get_department_by_id(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -406,20 +449,22 @@ pub async fn get_department_by_id(
 #[post("/api/departments")]
 pub async fn create_department(
     pool: web::Data<DbPool>,
-    department: web::Json<CreateDepartmentRequest>
+    department: web::Json<CreateDepartmentRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let id = Uuid::new_v4().to_string();
 
     let result = conn.exec_drop(
         "INSERT INTO departments (id, name, head_id) VALUES (?, ?, ?)",
-        (&id, &department.name, &department.head_id)
+        (&id, &department.name, &department.head_id),
     );
 
     match result {
@@ -430,7 +475,7 @@ pub async fn create_department(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -439,13 +484,15 @@ pub async fn create_department(
 pub async fn update_department(
     pool: web::Data<DbPool>,
     id: web::Path<String>,
-    department: web::Json<UpdateDepartmentRequest>
+    department: web::Json<UpdateDepartmentRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let mut updates = Vec::new();
@@ -477,27 +524,23 @@ pub async fn update_department(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
 /// Delete department
 #[delete("/api/departments/{id}")]
-pub async fn delete_department(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>
-) -> impl Responder {
+pub async fn delete_department(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
-    let result = conn.exec_drop(
-        "DELETE FROM departments WHERE id = ?",
-        (id.as_str(),)
-    );
+    let result = conn.exec_drop("DELETE FROM departments WHERE id = ?", (id.as_str(),));
 
     match result {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
@@ -505,7 +548,7 @@ pub async fn delete_department(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -516,21 +559,29 @@ pub async fn delete_department(
 pub async fn get_salary_grades(pool: web::Data<DbPool>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let result: Result<Vec<SalaryGrade>, mysql::Error> = conn.query_map(
         "SELECT id, code, base_salary, description, created_at FROM salary_grades",
-        |(id, code, base_salary, description, created_at)| SalaryGrade { id, code, base_salary, description, created_at }
+        |(id, code, base_salary, description, created_at)| SalaryGrade {
+            id,
+            code,
+            base_salary,
+            description,
+            created_at,
+        },
     );
 
     match result {
         Ok(grades) => HttpResponse::Ok().json(grades),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -538,21 +589,33 @@ pub async fn get_salary_grades(pool: web::Data<DbPool>) -> impl Responder {
 #[get("/api/salary-grades/{id}")]
 pub async fn get_salary_grade_by_id(
     pool: web::Data<DbPool>,
-    id: web::Path<String>
+    id: web::Path<String>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
-    let result: Result<Option<SalaryGrade>, mysql::Error> = conn.exec_first(
-        "SELECT id, code, base_salary, description, created_at FROM salary_grades WHERE id = ?",
-        (id.as_str(),)
-    ).map(|row: Option<(String, String, f64, Option<String>, Option<String>)>| {
-        row.map(|(id, code, base_salary, description, created_at)| SalaryGrade { id, code, base_salary, description, created_at })
-    });
+    let result: Result<Option<SalaryGrade>, mysql::Error> = conn
+        .exec_first(
+            "SELECT id, code, base_salary, description, created_at FROM salary_grades WHERE id = ?",
+            (id.as_str(),),
+        )
+        .map(|row: Option<SalaryGradeRow>| {
+            row.map(
+                |(id, code, base_salary, description, created_at)| SalaryGrade {
+                    id,
+                    code,
+                    base_salary,
+                    description,
+                    created_at,
+                },
+            )
+        });
 
     match result {
         Ok(Some(grade)) => HttpResponse::Ok().json(grade),
@@ -561,7 +624,7 @@ pub async fn get_salary_grade_by_id(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -569,20 +632,22 @@ pub async fn get_salary_grade_by_id(
 #[post("/api/salary-grades")]
 pub async fn create_salary_grade(
     pool: web::Data<DbPool>,
-    grade: web::Json<CreateSalaryGradeRequest>
+    grade: web::Json<CreateSalaryGradeRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let id = Uuid::new_v4().to_string();
 
     let result = conn.exec_drop(
         "INSERT INTO salary_grades (id, code, base_salary, description) VALUES (?, ?, ?, ?)",
-        (&id, &grade.code, grade.base_salary, &grade.description)
+        (&id, &grade.code, grade.base_salary, &grade.description),
     );
 
     match result {
@@ -594,7 +659,7 @@ pub async fn create_salary_grade(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
@@ -603,13 +668,15 @@ pub async fn create_salary_grade(
 pub async fn update_salary_grade(
     pool: web::Data<DbPool>,
     id: web::Path<String>,
-    grade: web::Json<UpdateSalaryGradeRequest>
+    grade: web::Json<UpdateSalaryGradeRequest>,
 ) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
     let mut updates = Vec::new();
@@ -635,7 +702,10 @@ pub async fn update_salary_grade(
     }
 
     params.push(id.as_str().into());
-    let query = format!("UPDATE salary_grades SET {} WHERE id = ?", updates.join(", "));
+    let query = format!(
+        "UPDATE salary_grades SET {} WHERE id = ?",
+        updates.join(", ")
+    );
 
     let result = conn.exec_drop(&query, params);
 
@@ -645,27 +715,23 @@ pub async fn update_salary_grade(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }
 
 /// Delete salary grade
 #[delete("/api/salary-grades/{id}")]
-pub async fn delete_salary_grade(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>
-) -> impl Responder {
+pub async fn delete_salary_grade(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
         Ok(conn) => conn,
-        Err(e) => return HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database connection error: {}", e)
-        }))
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "error": format!("Database connection error: {}", e)
+            }));
+        }
     };
 
-    let result = conn.exec_drop(
-        "DELETE FROM salary_grades WHERE id = ?",
-        (id.as_str(),)
-    );
+    let result = conn.exec_drop("DELETE FROM salary_grades WHERE id = ?", (id.as_str(),));
 
     match result {
         Ok(_) => HttpResponse::Ok().json(serde_json::json!({
@@ -673,6 +739,6 @@ pub async fn delete_salary_grade(
         })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
-        }))
+        })),
     }
 }

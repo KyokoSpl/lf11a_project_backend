@@ -7,19 +7,6 @@ pub struct HealthResponse {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct CreateItemRequest {
-    pub name: String,
-    pub description: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ItemResponse {
-    pub id: u32,
-    pub name: String,
-    pub description: String,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct User {
     pub id: i32,
     pub name: String,

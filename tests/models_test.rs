@@ -3,7 +3,6 @@
 #[cfg(test)]
 mod tests {
     use backend::models::*;
-    use serde_json;
 
     #[test]
     fn test_health_response_serialization() {
@@ -50,7 +49,7 @@ mod tests {
     fn test_create_department_request_deserialization() {
         let json = r#"{"name":"HR","head_id":"some-id"}"#;
         let request: CreateDepartmentRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.name, "HR");
         assert_eq!(request.head_id, Some("some-id".to_string()));
     }
@@ -73,7 +72,7 @@ mod tests {
     fn test_create_salary_grade_request() {
         let json = r#"{"code":"E2","base_salary":55000.0,"description":"Junior"}"#;
         let request: CreateSalaryGradeRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.code, "E2");
         assert_eq!(request.base_salary, 55000.0);
         assert_eq!(request.description, Some("Junior".to_string()));
@@ -115,9 +114,9 @@ mod tests {
             "role":"DepartmentHead",
             "hire_date":"2023-01-01"
         }"#;
-        
+
         let request: CreateEmployeeRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.first_name, "Jane");
         assert_eq!(request.last_name, "Smith");
         assert_eq!(request.role, Some("DepartmentHead".to_string()));
@@ -127,7 +126,7 @@ mod tests {
     fn test_update_employee_request_partial() {
         let json = r#"{"first_name":"UpdatedName"}"#;
         let request: UpdateEmployeeRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.first_name, Some("UpdatedName".to_string()));
         assert_eq!(request.last_name, None);
         assert_eq!(request.email, None);
@@ -137,7 +136,7 @@ mod tests {
     fn test_assign_manager_request() {
         let json = r#"{"manager_id":"mgr-123"}"#;
         let request: AssignManagerRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.manager_id, "mgr-123");
     }
 
@@ -145,14 +144,14 @@ mod tests {
     fn test_assign_salary_grade_request() {
         let json = r#"{"salary_grade_id":"grade-456"}"#;
         let request: AssignSalaryGradeRequest = serde_json::from_str(json).unwrap();
-        
+
         assert_eq!(request.salary_grade_id, "grade-456");
     }
 
     #[test]
     fn test_employee_roles() {
         let roles = vec!["Admin", "DepartmentHead", "DeputyHead", "Employee"];
-        
+
         for role in roles {
             let employee = Employee {
                 id: "test".to_string(),
@@ -169,8 +168,11 @@ mod tests {
                 created_at: None,
                 updated_at: None,
             };
-            
-            assert!(vec!["Admin", "DepartmentHead", "DeputyHead", "Employee"].contains(&employee.role.as_str()));
+
+            assert!(
+                ["Admin", "DepartmentHead", "DeputyHead", "Employee"]
+                    .contains(&employee.role.as_str())
+            );
         }
     }
 }
