@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_VERSION: 1.59.0
+  RUST_VERSION: 1.90.0
 
 jobs:
   lint-fmt:
