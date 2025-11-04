@@ -136,5 +136,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-test-
 
-      - name: Run tests
-        run: cargo test --workspace --all-features --verbose
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
+
+      - name: Run tests with coverage
+        run: cargo tarpaulin --workspace --all-features --verbose --out lcov --engine llvm
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./lcov.info
