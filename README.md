@@ -240,14 +240,61 @@ The database is initialized with:
 
 ## Testing
 
-The project includes comprehensive tests for:
+The project includes comprehensive test coverage (31%) with multiple test types:
 
-- **Models** (`tests/models_test.rs`) - Data structure and serialization tests
-- **Handlers** (`tests/handler_test.rs`) - Basic endpoint tests
-- **Personnel Handlers** (`tests/handler_personnel_test.rs`) - Personnel management endpoint tests
-- **Database** (`tests/db_test.rs`) - Database connection tests
+### Test Organization
 
-Run tests with:
+**Unit Tests:**
+- `tests/unit_models_test.rs` - Data structure and serialization tests (25 tests)
+- `tests/handlers_module_test.rs` - Request/response model validation (19 tests)
+
+**Integration Tests (HTTP Endpoints):**
+- `tests/integration_employee_test.rs` - Employee endpoint structure tests (7 tests)
+- `tests/integration_department_test.rs` - Department endpoint structure tests (4 tests)
+- `tests/integration_salary_grade_test.rs` - Salary grade endpoint structure tests (4 tests)
+- `tests/integration_handler_test.rs` - Legacy handler endpoint tests (5 tests)
+- `tests/direct_handler_test.rs` - Basic handler tests (3 tests)
+
+**Database Integration Tests:**
+- `tests/db_employee_integration_test.rs` - Employee database operations (13 tests)
+- `tests/db_department_integration_test.rs` - Department database operations (9 tests)
+- `tests/db_salary_grade_integration_test.rs` - Salary grade database operations (10 tests)
+- `tests/db_test.rs` - Database connection tests
+
+**HTTP Handler Tests (with Database):**
+- `tests/handler_employee_with_db_test.rs` - Employee handler HTTP tests (2 tests)
+- `tests/handler_department_with_db_test.rs` - Department handler HTTP tests (4 tests)
+- `tests/handler_salary_grade_with_db_test.rs` - Salary grade handler HTTP tests (4 tests)
+- `tests/handler_test.rs` - Legacy handler tests
+- `tests/handler_personnel_test.rs` - Personnel management handler tests
+
+**Test Utilities:**
+- `tests/common/mod.rs` - Shared database utilities and test helpers
+
+### Coverage Statistics
+
+- **Overall Coverage:** 31.00% (142/458 lines)
+- **Department Handlers:** 50.00% (45/90 lines)
+- **Salary Grade Handlers:** 52.63% (50/95 lines)  
+- **Employee Handlers:** 20.73% (40/193 lines)
+
+### Running Tests
+
+```bash
+# Run all tests
+cargo test
+
+# Run specific test file
+cargo test unit_models_test
+cargo test db_employee_integration_test
+cargo test handler_employee_with_db_test
+
+# Run with output
+cargo test -- --nocapture
+
+# Run tests with coverage report
+cargo tarpaulin --workspace --all-features --verbose --out lcov --engine llvm
+```
 
 ```bash
 cargo test
@@ -276,7 +323,10 @@ docker exec -it backend_mysql mysql -uroot -prootpassword mydb
 ## Project Structure
 
 ```
-backend/
+lf11a_project_backend/
+├── .github/
+│   └── workflows/
+│       └── ci.yml           # GitHub Actions CI/CD pipeline
 ├── src/
 │   ├── main.rs              # Server setup, OpenAPI config, and routes
 │   ├── lib.rs               # Library exports for tests
@@ -289,16 +339,33 @@ backend/
 │   ├── models.rs            # Data structures with OpenAPI schemas
 │   └── db.rs                # Database connection pool
 ├── tests/
-│   ├── models_test.rs       # Model tests
-│   ├── handler_test.rs      # Handler tests
-│   ├── handler_personnel_test.rs  # Personnel handler tests
-│   └── db_test.rs           # Database tests
-├── examples/
-│   └── print_openapi.rs     # Example to generate OpenAPI JSON
-├── Cargo.toml               # Dependencies (includes utoipa crates)
+│   ├── common/
+│   │   └── mod.rs           # Shared test utilities and database helpers
+│   ├── unit_models_test.rs             # Model unit tests (25 tests)
+│   ├── handlers_module_test.rs         # Request/response validation (19 tests)
+│   ├── integration_employee_test.rs    # Employee endpoint tests (7 tests)
+│   ├── integration_department_test.rs  # Department endpoint tests (4 tests)
+│   ├── integration_salary_grade_test.rs # Salary grade endpoint tests (4 tests)
+│   ├── integration_handler_test.rs     # Legacy handler tests (5 tests)
+│   ├── db_employee_integration_test.rs # Employee DB operations (13 tests)
+│   ├── db_department_integration_test.rs # Department DB operations (9 tests)
+│   ├── db_salary_grade_integration_test.rs # Salary grade DB operations (10 tests)
+│   ├── handler_employee_with_db_test.rs # Employee HTTP+DB tests (2 tests)
+│   ├── handler_department_with_db_test.rs # Department HTTP+DB tests (4 tests)
+│   ├── handler_salary_grade_with_db_test.rs # Salary grade HTTP+DB tests (4 tests)
+│   ├── direct_handler_test.rs          # Basic handler tests (3 tests)
+│   ├── handler_test.rs                 # Legacy handler tests
+│   ├── handler_personnel_test.rs       # Personnel handler tests
+│   ├── models_test.rs                  # Model tests
+│   └── db_test.rs                      # Database connection tests
+├── Cargo.toml               # Dependencies and project configuration
+├── Cargo.lock               # Locked dependency versions
 ├── docker-compose.yml       # MySQL Docker setup
 ├── init.sql                 # Database schema and seed data
+├── lcov.info                # Code coverage report
 ├── .env                     # Environment variables (DATABASE_URL, HOST, PORT)
+├── .env_example             # Example environment configuration
+├── .gitignore               # Git ignore patterns
 └── README.md                # This file
 ```
 
