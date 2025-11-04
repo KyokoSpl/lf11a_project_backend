@@ -8,7 +8,7 @@ fn test_health_response_creation() {
         status: "healthy".to_string(),
         message: "Service is running".to_string(),
     };
-    
+
     assert_eq!(health_resp.status, "healthy");
     assert!(!health_resp.message.is_empty());
 }
@@ -20,7 +20,7 @@ fn test_user_creation() {
         name: "Test User".to_string(),
         email: "test@example.com".to_string(),
     };
-    
+
     assert_eq!(user.id, 42);
     assert!(!user.name.is_empty());
     assert!(user.email.contains("@"));
@@ -32,7 +32,7 @@ fn test_create_user_request() {
         name: "New User".to_string(),
         email: "new@example.com".to_string(),
     };
-    
+
     assert_eq!(request.name, "New User");
     assert_eq!(request.email, "new@example.com");
 }
