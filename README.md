@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/KyokoSpl/lf11a_project_backend/actions/workflows/ci.yml/badge.svg)](https://github.com/KyokoSpl/lf11a_project_backend/actions/workflows/ci.yml)
 
-[![Coverage Status](https://coveralls.io/repos/github/KyokoSpl/lf11a_project_backend/badge.svg?branch=main)](https://coveralls.io/github/KyokoSpl/lf11a_project_backend?branch=main)
+[![Coverage Status](https://coveralls.io/repos/github/KyokoSpl/lf11a_project_backend/badge.svg?branch=main&t=6b18871)](https://coveralls.io/github/KyokoSpl/lf11a_project_backend?branch=main)
 
 A comprehensive Rust backend API using Actix-web and MySQL for personnel management with OpenAPI/Swagger documentation.
 
