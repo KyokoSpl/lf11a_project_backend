@@ -1,3 +1,5 @@
+// Api Routes with their respective function like post or get, and the logic behind it
+
 use crate::db::DbPool;
 use crate::models::{CreateUserRequest, HealthResponse, User};
 use actix_web::{HttpResponse, Responder, get, post, web};

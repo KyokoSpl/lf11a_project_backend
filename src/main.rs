@@ -1,3 +1,5 @@
+// Main File where the .env data is read and the actix api aka the http server is created
+
 mod db;
 mod handler;
 mod handler_personnel;

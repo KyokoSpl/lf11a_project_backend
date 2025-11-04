@@ -1,3 +1,6 @@
+// Models used for Api and database connection (everything that has option, can be set but doesn't
+// have to and could stay null or not set if wanted)
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

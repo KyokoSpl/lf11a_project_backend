@@ -1,3 +1,5 @@
+// Handeling DB Connection
+
 use mysql::*;
 
 pub type DbPool = Pool;

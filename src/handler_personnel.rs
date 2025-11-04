@@ -1,3 +1,5 @@
+// Personnel specific handlers like employees salary and departments
+
 use crate::db::DbPool;
 use crate::models::*;
 use actix_web::{HttpResponse, Responder, delete, get, post, put, web};

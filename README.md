@@ -2,9 +2,36 @@
 
 A comprehensive Rust backend API using Actix-web and MySQL for personnel management.
 
+## Requirements
+
+### Rust
+
+#### Installation:
+
+- Windows:
+  - [.exe download](https://rust-lang.org/tools/install/?platform_override=win)
+  - [More Docs](https://rust-lang.github.io/rustup/installation/windows.html)
+
+- Linux/UNIX/MacOS
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+```
+
+### Docker
+
+#### Installation:
+
+- Windows:
+  [Docs](https://docs.docker.com/desktop/setup/install/windows-install/)
+- Linux:
+  - use your package manager and the this [Docs](https://docs.docker.com/desktop/setup/install/linux/)
+
 ## Features
 
 ✅ **Employee Management** (Mitarbeiterverwaltung)
+
 - Create, read, update, and delete employees
 - Soft delete support (inactive employees)
 - Assign managers to employees
@@ -12,22 +39,26 @@ A comprehensive Rust backend API using Actix-web and MySQL for personnel managem
 - Filter by department
 
 ✅ **Department Management** (Abteilungsverwaltung)
+
 - Create and manage departments
 - Assign department heads
 - View employees by department
 
 ✅ **Salary Grade Management** (Gehaltsstufen)
+
 - Create and manage salary grades
 - Assign grades to employees
 - Track base salary for each grade
 
 ✅ **Role Management**
+
 - Admin
 - DepartmentHead (Abteilungsleiter)
 - DeputyHead (Stellvertretender Leiter)
 - Employee (Mitarbeiter)
 
 ✅ **Manager Assignment** (Vorgesetztenzuweisung)
+
 - Assign managers to employees
 - Hierarchical structure support
 
@@ -40,6 +71,7 @@ docker-compose up -d
 ```
 
 This will:
+
 - Start a MySQL 8.0 container
 - Create a database called `mydb`
 - Run the `init.sql` script to create tables with sample data
@@ -78,6 +110,7 @@ cargo test -- --nocapture
 ## API Endpoints
 
 ### Health Check
+
 ```bash
 GET /health
 ```
@@ -85,6 +118,7 @@ GET /health
 ### Employee Endpoints
 
 #### Get All Employees
+
 ```bash
 # Active employees only
 GET /api/employees
@@ -94,11 +128,13 @@ GET /api/employees?include_inactive=true
 ```
 
 #### Get Employee by ID
+
 ```bash
 GET /api/employees/{id}
 ```
 
 #### Create Employee
+
 ```bash
 POST /api/employees
 Content-Type: application/json
@@ -118,6 +154,7 @@ Content-Type: application/json
 Available roles: `Admin`, `DepartmentHead`, `DeputyHead`, `Employee`
 
 #### Update Employee
+
 ```bash
 PUT /api/employees/{id}
 Content-Type: application/json
@@ -130,11 +167,13 @@ Content-Type: application/json
 ```
 
 #### Delete Employee (Soft Delete)
+
 ```bash
 DELETE /api/employees/{id}
 ```
 
 #### Assign Manager
+
 ```bash
 PUT /api/employees/{id}/manager
 Content-Type: application/json
@@ -145,6 +184,7 @@ Content-Type: application/json
 ```
 
 #### Assign Salary Grade
+
 ```bash
 PUT /api/employees/{id}/salary-grade
 Content-Type: application/json
@@ -155,6 +195,7 @@ Content-Type: application/json
 ```
 
 #### Get Employees by Department
+
 ```bash
 GET /api/departments/{id}/employees
 ```
@@ -162,16 +203,19 @@ GET /api/departments/{id}/employees
 ### Department Endpoints
 
 #### Get All Departments
+
 ```bash
 GET /api/departments
 ```
 
 #### Get Department by ID
+
 ```bash
 GET /api/departments/{id}
 ```
 
 #### Create Department
+
 ```bash
 POST /api/departments
 Content-Type: application/json
@@ -183,6 +227,7 @@ Content-Type: application/json
 ```
 
 #### Update Department
+
 ```bash
 PUT /api/departments/{id}
 Content-Type: application/json
@@ -194,6 +239,7 @@ Content-Type: application/json
 ```
 
 #### Delete Department
+
 ```bash
 DELETE /api/departments/{id}
 ```
@@ -201,16 +247,19 @@ DELETE /api/departments/{id}
 ### Salary Grade Endpoints
 
 #### Get All Salary Grades
+
 ```bash
 GET /api/salary-grades
 ```
 
 #### Get Salary Grade by ID
+
 ```bash
 GET /api/salary-grades/{id}
 ```
 
 #### Create Salary Grade
+
 ```bash
 POST /api/salary-grades
 Content-Type: application/json
@@ -223,6 +272,7 @@ Content-Type: application/json
 ```
 
 #### Update Salary Grade
+
 ```bash
 PUT /api/salary-grades/{id}
 Content-Type: application/json
@@ -235,6 +285,7 @@ Content-Type: application/json
 ```
 
 #### Delete Salary Grade
+
 ```bash
 DELETE /api/salary-grades/{id}
 ```
@@ -244,12 +295,14 @@ DELETE /api/salary-grades/{id}
 ### Tables
 
 **departments**
+
 - `id` (CHAR(36), Primary Key, UUID)
 - `name` (VARCHAR(255), UNIQUE)
 - `head_id` (CHAR(36), Foreign Key to employees)
 - `created_at`, `updated_at`
 
 **salary_grades**
+
 - `id` (CHAR(36), Primary Key, UUID)
 - `code` (VARCHAR(50), UNIQUE)
 - `base_salary` (DECIMAL(12,2))
@@ -257,6 +310,7 @@ DELETE /api/salary-grades/{id}
 - `created_at`
 
 **employees**
+
 - `id` (CHAR(36), Primary Key, UUID)
 - `first_name`, `last_name` (VARCHAR(100))
 - `email` (VARCHAR(255), UNIQUE)
@@ -272,6 +326,7 @@ DELETE /api/salary-grades/{id}
 ## Sample Data
 
 The database is initialized with:
+
 - 7 salary grades (E1-E4, M1-M2, D1)
 - 6 departments (Engineering, HR, Marketing, Sales, Finance, IT Operations)
 - 24 employees including:
@@ -283,12 +338,14 @@ The database is initialized with:
 ## Testing
 
 The project includes comprehensive tests for:
+
 - **Models** (`tests/models_test.rs`) - Data structure and serialization tests
 - **Handlers** (`tests/handler_test.rs`) - Basic endpoint tests
 - **Personnel Handlers** (`tests/handler_personnel_test.rs`) - Personnel management endpoint tests
 - **Database** (`tests/db_test.rs`) - Database connection tests
 
 Run tests with:
+
 ```bash
 cargo test
 ```
@@ -339,6 +396,7 @@ backend/
 ## Environment Variables
 
 Create a `.env` file:
+
 ```
 DATABASE_URL=mysql://root:rootpassword@localhost:3307/mydb
 ```
