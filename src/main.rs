@@ -12,23 +12,23 @@ use handlers::{
     // Employee endpoints
     assign_manager,
     assign_salary_grade,
+    // Department endpoints
+    create_department,
     create_employee,
+    // Salary grade endpoints
+    create_salary_grade,
+    delete_department,
     delete_employee,
+    delete_salary_grade,
+    get_department_by_id,
+    get_departments,
     get_employee_by_id,
     get_employees,
     get_employees_by_department,
-    update_employee,
-    // Department endpoints
-    create_department,
-    delete_department,
-    get_department_by_id,
-    get_departments,
-    update_department,
-    // Salary grade endpoints
-    create_salary_grade,
-    delete_salary_grade,
     get_salary_grade_by_id,
     get_salary_grades,
+    update_department,
+    update_employee,
     update_salary_grade,
 };
 use std::env;
@@ -124,10 +124,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(web::Data::new(pool.clone()))
             // Swagger UI
-            .service(
-                SwaggerUi::new("/docs/{_:.*}")
-                    .url("/api-docs/openapi.json", openapi.clone())
-            )
+            .service(SwaggerUi::new("/docs/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             // Health and legacy endpoints
             .service(health)
             .service(get_users)
