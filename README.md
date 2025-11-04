@@ -1,6 +1,6 @@
 # Backend API - Personnel Management System (Personalverwaltung)
 
-A comprehensive Rust backend API using Actix-web and MySQL for personnel management.
+A comprehensive Rust backend API using Actix-web and MySQL for personnel management with OpenAPI/Swagger documentation.
 
 ## Requirements
 
@@ -62,6 +62,12 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 - Assign managers to employees
 - Hierarchical structure support
 
+✅ **OpenAPI/Swagger Documentation**
+
+- Interactive API documentation at `/docs`
+- Try out endpoints directly from the browser
+- Complete API specifications with request/response examples
+
 ## Setup
 
 ### 1. Start MySQL with Docker
@@ -77,13 +83,26 @@ This will:
 - Run the `init.sql` script to create tables with sample data
 - Expose MySQL on port 3307
 
-### 2. Install Dependencies
+### 2. Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# Database Configuration
+DATABASE_URL=mysql://user:userpassword@localhost:3307/mydb
+
+# Server Configuration
+HOST=127.0.0.1
+PORT=8080
+```
+
+### 3. Install Dependencies
 
 ```bash
 cargo build
 ```
 
-### 3. Run the Server
+### 4. Run the Server
 
 ```bash
 cargo run
@@ -91,7 +110,9 @@ cargo run
 
 The server will start at `http://127.0.0.1:8080`
 
-### 4. Run Tests
+**🎉 Access the interactive API documentation at: `http://127.0.0.1:8080/docs/`**
+
+### 5. Run Tests
 
 ```bash
 # Run all tests
@@ -107,188 +128,67 @@ cargo test --test db_test
 cargo test -- --nocapture
 ```
 
-## API Endpoints
+## API Documentation
 
-### Health Check
+### Interactive Swagger UI
 
-```bash
-GET /health
-```
+The API includes comprehensive OpenAPI 3.0 documentation accessible through Swagger UI.
 
-### Employee Endpoints
+**Access at: `http://127.0.0.1:8080/docs/`**
 
-#### Get All Employees
+#### Features:
 
-```bash
-# Active employees only
-GET /api/employees
+- 📖 **Complete API Reference** - All endpoints documented with descriptions
+- 🧪 **Try It Out** - Test endpoints directly from your browser
+- 📝 **Request/Response Examples** - See example payloads for all operations
+- 🏷️ **Organized by Tags** - Endpoints grouped by domain:
+  - Health - System health check
+  - Users - Legacy user management
+  - Employees - Employee management (CRUD, assignments)
+  - Departments - Department management
+  - Salary Grades - Salary grade management
+- 📊 **Schema Definitions** - Detailed data models for all requests/responses
 
-# Include inactive employees
-GET /api/employees?include_inactive=true
-```
+#### Available Endpoints:
 
-#### Get Employee by ID
+**Health Check**
+- `GET /health` - Check server status
 
-```bash
-GET /api/employees/{id}
-```
+**Employees** (Mitarbeiter)
+- `GET /api/employees` - List all employees (with optional inactive filter)
+- `GET /api/employees/{id}` - Get employee details
+- `POST /api/employees` - Create new employee
+- `PUT /api/employees/{id}` - Update employee
+- `DELETE /api/employees/{id}` - Delete employee (soft delete)
+- `PUT /api/employees/{id}/manager` - Assign manager
+- `PUT /api/employees/{id}/salary-grade` - Assign salary grade
+- `GET /api/departments/{id}/employees` - Get employees by department
 
-#### Create Employee
+**Departments** (Abteilungen)
+- `GET /api/departments` - List all departments
+- `GET /api/departments/{id}` - Get department details
+- `POST /api/departments` - Create new department
+- `PUT /api/departments/{id}` - Update department
+- `DELETE /api/departments/{id}` - Delete department
 
-```bash
-POST /api/employees
-Content-Type: application/json
+**Salary Grades** (Gehaltsstufen)
+- `GET /api/salary-grades` - List all salary grades
+- `GET /api/salary-grades/{id}` - Get salary grade details
+- `POST /api/salary-grades` - Create new salary grade
+- `PUT /api/salary-grades/{id}` - Update salary grade
+- `DELETE /api/salary-grades/{id}` - Delete salary grade
 
-{
-  "first_name": "Max",
-  "last_name": "Mustermann",
-  "email": "max.mustermann@company.com",
-  "department_id": "dept-uuid",
-  "salary_grade_id": "grade-uuid",
-  "manager_id": "manager-uuid",
-  "role": "Employee",
-  "hire_date": "2024-01-15"
-}
-```
+**Legacy Users**
+- `GET /api/users` - List all users
+- `GET /api/users/{id}` - Get user by ID
+- `POST /api/users` - Create new user
 
-Available roles: `Admin`, `DepartmentHead`, `DeputyHead`, `Employee`
+### OpenAPI Specification
 
-#### Update Employee
+The raw OpenAPI specification is available at:
+- **JSON Format**: `http://127.0.0.1:8080/api-docs/openapi.json`
 
-```bash
-PUT /api/employees/{id}
-Content-Type: application/json
-
-{
-  "first_name": "Updated Name",
-  "email": "new.email@company.com",
-  "active": true
-}
-```
-
-#### Delete Employee (Soft Delete)
-
-```bash
-DELETE /api/employees/{id}
-```
-
-#### Assign Manager
-
-```bash
-PUT /api/employees/{id}/manager
-Content-Type: application/json
-
-{
-  "manager_id": "manager-uuid"
-}
-```
-
-#### Assign Salary Grade
-
-```bash
-PUT /api/employees/{id}/salary-grade
-Content-Type: application/json
-
-{
-  "salary_grade_id": "grade-uuid"
-}
-```
-
-#### Get Employees by Department
-
-```bash
-GET /api/departments/{id}/employees
-```
-
-### Department Endpoints
-
-#### Get All Departments
-
-```bash
-GET /api/departments
-```
-
-#### Get Department by ID
-
-```bash
-GET /api/departments/{id}
-```
-
-#### Create Department
-
-```bash
-POST /api/departments
-Content-Type: application/json
-
-{
-  "name": "Engineering",
-  "head_id": "employee-uuid"
-}
-```
-
-#### Update Department
-
-```bash
-PUT /api/departments/{id}
-Content-Type: application/json
-
-{
-  "name": "Updated Department Name",
-  "head_id": "new-head-uuid"
-}
-```
-
-#### Delete Department
-
-```bash
-DELETE /api/departments/{id}
-```
-
-### Salary Grade Endpoints
-
-#### Get All Salary Grades
-
-```bash
-GET /api/salary-grades
-```
-
-#### Get Salary Grade by ID
-
-```bash
-GET /api/salary-grades/{id}
-```
-
-#### Create Salary Grade
-
-```bash
-POST /api/salary-grades
-Content-Type: application/json
-
-{
-  "code": "E5",
-  "base_salary": 100000.00,
-  "description": "Expert Level"
-}
-```
-
-#### Update Salary Grade
-
-```bash
-PUT /api/salary-grades/{id}
-Content-Type: application/json
-
-{
-  "code": "E5-Updated",
-  "base_salary": 105000.00,
-  "description": "Expert Level - Updated"
-}
-```
-
-#### Delete Salary Grade
-
-```bash
-DELETE /api/salary-grades/{id}
-```
+This can be imported into tools like Postman, Insomnia, or used to generate client SDKs.
 
 ## Database Schema
 
@@ -375,35 +275,76 @@ docker exec -it backend_mysql mysql -uroot -prootpassword mydb
 ```
 backend/
 ├── src/
-│   ├── main.rs              # Server setup and routes
+│   ├── main.rs              # Server setup, OpenAPI config, and routes
 │   ├── lib.rs               # Library exports for tests
-│   ├── handler.rs           # Basic/legacy handlers
-│   ├── handler_personnel.rs # Personnel management handlers
-│   ├── models.rs            # Data structures
-│   └── db.rs                # Database connection
+│   ├── handler.rs           # Basic/legacy handlers (health, users)
+│   ├── handlers/            # Personnel management handlers (modular)
+│   │   ├── mod.rs           # Module exports
+│   │   ├── employee.rs      # Employee CRUD and assignment handlers
+│   │   ├── department.rs    # Department management handlers
+│   │   └── salary_grade.rs  # Salary grade management handlers
+│   ├── models.rs            # Data structures with OpenAPI schemas
+│   └── db.rs                # Database connection pool
 ├── tests/
 │   ├── models_test.rs       # Model tests
 │   ├── handler_test.rs      # Handler tests
 │   ├── handler_personnel_test.rs  # Personnel handler tests
 │   └── db_test.rs           # Database tests
-├── Cargo.toml               # Dependencies
+├── examples/
+│   └── print_openapi.rs     # Example to generate OpenAPI JSON
+├── Cargo.toml               # Dependencies (includes utoipa crates)
 ├── docker-compose.yml       # MySQL Docker setup
 ├── init.sql                 # Database schema and seed data
-├── .env                     # Environment variables
+├── .env                     # Environment variables (DATABASE_URL, HOST, PORT)
 └── README.md                # This file
 ```
 
+## Key Dependencies
+
+- **actix-web** - Web framework
+- **mysql** - MySQL database driver
+- **serde** & **serde_json** - Serialization/deserialization
+- **uuid** - UUID generation
+- **dotenv** - Environment variable management
+- **utoipa** - OpenAPI specification generation
+- **utoipa-swagger-ui** - Swagger UI integration
+
 ## Environment Variables
 
-Create a `.env` file:
+The application is configured via a `.env` file in the project root:
 
+```env
+# Database Configuration
+# Format: mysql://username:password@host:port/database
+DATABASE_URL=mysql://user:userpassword@localhost:3307/mydb
+
+# Server Configuration
+HOST=127.0.0.1
+PORT=8080
 ```
-DATABASE_URL=mysql://root:rootpassword@localhost:3307/mydb
-```
+
+**Configuration Notes:**
+- `DATABASE_URL`: Connection string for MySQL (matches docker-compose.yml settings)
+- `HOST`: Server bind address (use `0.0.0.0` to accept external connections)
+- `PORT`: Server port (defaults to 8080 if not set)
 
 ## Example Usage Scenarios
 
-### Scenario 1: Create a new employee and assign them to a department with a manager
+### Using Swagger UI (Recommended)
+
+The easiest way to interact with the API is through the Swagger UI at `http://127.0.0.1:8080/docs/`
+
+1. Open your browser to `http://127.0.0.1:8080/docs/`
+2. Browse available endpoints organized by tags
+3. Click on any endpoint to expand it
+4. Click "Try it out" button
+5. Fill in required parameters/request body
+6. Click "Execute" to send the request
+7. View the response below
+
+### Using cURL (Command Line)
+
+#### Scenario 1: Create a new employee and assign them to a department with a manager
 
 ```bash
 # 1. Create employee
@@ -425,7 +366,7 @@ curl -X PUT http://127.0.0.1:8080/api/employees/{employee-id}/manager \
   -d '{"manager_id": "750e8400-e29b-41d4-a716-446655440002"}'
 ```
 
-### Scenario 2: Promote an employee and change their salary grade
+#### Scenario 2: Promote an employee and change their salary grade
 
 ```bash
 # Update role and salary grade
@@ -437,7 +378,7 @@ curl -X PUT http://127.0.0.1:8080/api/employees/{employee-id} \
   }'
 ```
 
-### Scenario 3: Create a new department with a department head
+#### Scenario 3: Create a new department with a department head
 
 ```bash
 # 1. Create department

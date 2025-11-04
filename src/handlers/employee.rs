@@ -1,4 +1,4 @@
-// Personnel specific handlers like employees salary and departments
+// Employee management handlers
 
 use crate::db::DbPool;
 use crate::models::*;
@@ -6,19 +6,19 @@ use actix_web::{HttpResponse, Responder, delete, get, post, put, web};
 use mysql::prelude::*;
 use uuid::Uuid;
 
-// Type aliases for complex database row types
-type DepartmentRow = (
-    String,
-    String,
-    Option<String>,
-    Option<String>,
-    Option<String>,
-);
-type SalaryGradeRow = (String, String, f64, Option<String>, Option<String>);
-
-// ==================== EMPLOYEE ENDPOINTS ====================
-
 /// Get all employees (active only by default)
+#[utoipa::path(
+    get,
+    path = "/api/employees",
+    params(
+        ("include_inactive" = Option<String>, Query, description = "Include inactive employees (true/false)")
+    ),
+    responses(
+        (status = 200, description = "List of employees", body = Vec<Employee>),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[get("/api/employees")]
 pub async fn get_employees(
     pool: web::Data<DbPool>,
@@ -75,6 +75,19 @@ pub async fn get_employees(
 }
 
 /// Get employee by ID
+#[utoipa::path(
+    get,
+    path = "/api/employees/{id}",
+    params(
+        ("id" = String, Path, description = "Employee UUID")
+    ),
+    responses(
+        (status = 200, description = "Employee found", body = Employee),
+        (status = 404, description = "Employee not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[get("/api/employees/{id}")]
 pub async fn get_employee_by_id(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
@@ -123,6 +136,16 @@ pub async fn get_employee_by_id(pool: web::Data<DbPool>, id: web::Path<String>) 
 }
 
 /// Create new employee
+#[utoipa::path(
+    post,
+    path = "/api/employees",
+    request_body = CreateEmployeeRequest,
+    responses(
+        (status = 201, description = "Employee created successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[post("/api/employees")]
 pub async fn create_employee(
     pool: web::Data<DbPool>,
@@ -160,6 +183,20 @@ pub async fn create_employee(
 }
 
 /// Update employee
+#[utoipa::path(
+    put,
+    path = "/api/employees/{id}",
+    params(
+        ("id" = String, Path, description = "Employee UUID")
+    ),
+    request_body = UpdateEmployeeRequest,
+    responses(
+        (status = 200, description = "Employee updated successfully"),
+        (status = 404, description = "Employee not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[put("/api/employees/{id}")]
 pub async fn update_employee(
     pool: web::Data<DbPool>,
@@ -237,6 +274,18 @@ pub async fn update_employee(
 }
 
 /// Delete employee (soft delete)
+#[utoipa::path(
+    delete,
+    path = "/api/employees/{id}",
+    params(
+        ("id" = String, Path, description = "Employee UUID")
+    ),
+    responses(
+        (status = 200, description = "Employee deleted successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[delete("/api/employees/{id}")]
 pub async fn delete_employee(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
     let mut conn = match pool.get_conn() {
@@ -264,6 +313,19 @@ pub async fn delete_employee(pool: web::Data<DbPool>, id: web::Path<String>) -> 
 }
 
 /// Assign manager to employee
+#[utoipa::path(
+    put,
+    path = "/api/employees/{id}/manager",
+    params(
+        ("id" = String, Path, description = "Employee UUID")
+    ),
+    request_body = AssignManagerRequest,
+    responses(
+        (status = 200, description = "Manager assigned successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[put("/api/employees/{id}/manager")]
 pub async fn assign_manager(
     pool: web::Data<DbPool>,
@@ -295,6 +357,19 @@ pub async fn assign_manager(
 }
 
 /// Assign salary grade to employee
+#[utoipa::path(
+    put,
+    path = "/api/employees/{id}/salary-grade",
+    params(
+        ("id" = String, Path, description = "Employee UUID")
+    ),
+    request_body = AssignSalaryGradeRequest,
+    responses(
+        (status = 200, description = "Salary grade assigned successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[put("/api/employees/{id}/salary-grade")]
 pub async fn assign_salary_grade(
     pool: web::Data<DbPool>,
@@ -326,6 +401,18 @@ pub async fn assign_salary_grade(
 }
 
 /// Get employees by department
+#[utoipa::path(
+    get,
+    path = "/api/departments/{id}/employees",
+    params(
+        ("id" = String, Path, description = "Department UUID")
+    ),
+    responses(
+        (status = 200, description = "List of employees in department", body = Vec<Employee>),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Employees"
+)]
 #[get("/api/departments/{id}/employees")]
 pub async fn get_employees_by_department(
     pool: web::Data<DbPool>,
@@ -367,378 +454,6 @@ pub async fn get_employees_by_department(
                 .collect();
             HttpResponse::Ok().json(employees)
         }
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-// ==================== DEPARTMENT ENDPOINTS ====================
-
-/// Get all departments
-#[get("/api/departments")]
-pub async fn get_departments(pool: web::Data<DbPool>) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result: Result<Vec<Department>, mysql::Error> = conn.query_map(
-        "SELECT id, name, head_id, created_at, updated_at FROM departments",
-        |(id, name, head_id, created_at, updated_at)| Department {
-            id,
-            name,
-            head_id,
-            created_at,
-            updated_at,
-        },
-    );
-
-    match result {
-        Ok(departments) => HttpResponse::Ok().json(departments),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Get department by ID
-#[get("/api/departments/{id}")]
-pub async fn get_department_by_id(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result: Result<Option<Department>, mysql::Error> = conn
-        .exec_first(
-            "SELECT id, name, head_id, created_at, updated_at FROM departments WHERE id = ?",
-            (id.as_str(),),
-        )
-        .map(|row: Option<DepartmentRow>| {
-            row.map(|(id, name, head_id, created_at, updated_at)| Department {
-                id,
-                name,
-                head_id,
-                created_at,
-                updated_at,
-            })
-        });
-
-    match result {
-        Ok(Some(department)) => HttpResponse::Ok().json(department),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Department not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Create new department
-#[post("/api/departments")]
-pub async fn create_department(
-    pool: web::Data<DbPool>,
-    department: web::Json<CreateDepartmentRequest>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let id = Uuid::new_v4().to_string();
-
-    let result = conn.exec_drop(
-        "INSERT INTO departments (id, name, head_id) VALUES (?, ?, ?)",
-        (&id, &department.name, &department.head_id),
-    );
-
-    match result {
-        Ok(_) => HttpResponse::Created().json(serde_json::json!({
-            "id": id,
-            "name": department.name,
-            "head_id": department.head_id
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Update department
-#[put("/api/departments/{id}")]
-pub async fn update_department(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>,
-    department: web::Json<UpdateDepartmentRequest>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let mut updates = Vec::new();
-    let mut params: Vec<mysql::Value> = Vec::new();
-
-    if let Some(ref name) = department.name {
-        updates.push("name = ?");
-        params.push(name.clone().into());
-    }
-    if let Some(ref head_id) = department.head_id {
-        updates.push("head_id = ?");
-        params.push(head_id.clone().into());
-    }
-
-    if updates.is_empty() {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "No fields to update"
-        }));
-    }
-
-    params.push(id.as_str().into());
-    let query = format!("UPDATE departments SET {} WHERE id = ?", updates.join(", "));
-
-    let result = conn.exec_drop(&query, params);
-
-    match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "message": "Department updated successfully"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Delete department
-#[delete("/api/departments/{id}")]
-pub async fn delete_department(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result = conn.exec_drop("DELETE FROM departments WHERE id = ?", (id.as_str(),));
-
-    match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "message": "Department deleted successfully"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-// ==================== SALARY GRADE ENDPOINTS ====================
-
-/// Get all salary grades
-#[get("/api/salary-grades")]
-pub async fn get_salary_grades(pool: web::Data<DbPool>) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result: Result<Vec<SalaryGrade>, mysql::Error> = conn.query_map(
-        "SELECT id, code, base_salary, description, created_at FROM salary_grades",
-        |(id, code, base_salary, description, created_at)| SalaryGrade {
-            id,
-            code,
-            base_salary,
-            description,
-            created_at,
-        },
-    );
-
-    match result {
-        Ok(grades) => HttpResponse::Ok().json(grades),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Get salary grade by ID
-#[get("/api/salary-grades/{id}")]
-pub async fn get_salary_grade_by_id(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result: Result<Option<SalaryGrade>, mysql::Error> = conn
-        .exec_first(
-            "SELECT id, code, base_salary, description, created_at FROM salary_grades WHERE id = ?",
-            (id.as_str(),),
-        )
-        .map(|row: Option<SalaryGradeRow>| {
-            row.map(
-                |(id, code, base_salary, description, created_at)| SalaryGrade {
-                    id,
-                    code,
-                    base_salary,
-                    description,
-                    created_at,
-                },
-            )
-        });
-
-    match result {
-        Ok(Some(grade)) => HttpResponse::Ok().json(grade),
-        Ok(None) => HttpResponse::NotFound().json(serde_json::json!({
-            "error": "Salary grade not found"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Create new salary grade
-#[post("/api/salary-grades")]
-pub async fn create_salary_grade(
-    pool: web::Data<DbPool>,
-    grade: web::Json<CreateSalaryGradeRequest>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let id = Uuid::new_v4().to_string();
-
-    let result = conn.exec_drop(
-        "INSERT INTO salary_grades (id, code, base_salary, description) VALUES (?, ?, ?, ?)",
-        (&id, &grade.code, grade.base_salary, &grade.description),
-    );
-
-    match result {
-        Ok(_) => HttpResponse::Created().json(serde_json::json!({
-            "id": id,
-            "code": grade.code,
-            "base_salary": grade.base_salary,
-            "description": grade.description
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Update salary grade
-#[put("/api/salary-grades/{id}")]
-pub async fn update_salary_grade(
-    pool: web::Data<DbPool>,
-    id: web::Path<String>,
-    grade: web::Json<UpdateSalaryGradeRequest>,
-) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let mut updates = Vec::new();
-    let mut params: Vec<mysql::Value> = Vec::new();
-
-    if let Some(ref code) = grade.code {
-        updates.push("code = ?");
-        params.push(code.clone().into());
-    }
-    if let Some(base_salary) = grade.base_salary {
-        updates.push("base_salary = ?");
-        params.push(base_salary.into());
-    }
-    if let Some(ref description) = grade.description {
-        updates.push("description = ?");
-        params.push(description.clone().into());
-    }
-
-    if updates.is_empty() {
-        return HttpResponse::BadRequest().json(serde_json::json!({
-            "error": "No fields to update"
-        }));
-    }
-
-    params.push(id.as_str().into());
-    let query = format!(
-        "UPDATE salary_grades SET {} WHERE id = ?",
-        updates.join(", ")
-    );
-
-    let result = conn.exec_drop(&query, params);
-
-    match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "message": "Salary grade updated successfully"
-        })),
-        Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
-            "error": format!("Database error: {}", e)
-        })),
-    }
-}
-
-/// Delete salary grade
-#[delete("/api/salary-grades/{id}")]
-pub async fn delete_salary_grade(pool: web::Data<DbPool>, id: web::Path<String>) -> impl Responder {
-    let mut conn = match pool.get_conn() {
-        Ok(conn) => conn,
-        Err(e) => {
-            return HttpResponse::InternalServerError().json(serde_json::json!({
-                "error": format!("Database connection error: {}", e)
-            }));
-        }
-    };
-
-    let result = conn.exec_drop("DELETE FROM salary_grades WHERE id = ?", (id.as_str(),));
-
-    match result {
-        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
-            "message": "Salary grade deleted successfully"
-        })),
         Err(e) => HttpResponse::InternalServerError().json(serde_json::json!({
             "error": format!("Database error: {}", e)
         })),

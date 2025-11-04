@@ -2,28 +2,29 @@
 // have to and could stay null or not set if wanted)
 
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct HealthResponse {
     pub status: String,
     pub message: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct User {
     pub id: i32,
     pub name: String,
     pub email: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateUserRequest {
     pub name: String,
     pub email: String,
 }
 
 // Department Models
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Department {
     pub id: String,
     pub name: String,
@@ -32,20 +33,20 @@ pub struct Department {
     pub updated_at: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateDepartmentRequest {
     pub name: String,
     pub head_id: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateDepartmentRequest {
     pub name: Option<String>,
     pub head_id: Option<String>,
 }
 
 // Salary Grade Models
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct SalaryGrade {
     pub id: String,
     pub code: String,
@@ -54,14 +55,14 @@ pub struct SalaryGrade {
     pub created_at: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateSalaryGradeRequest {
     pub code: String,
     pub base_salary: f64,
     pub description: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateSalaryGradeRequest {
     pub code: Option<String>,
     pub base_salary: Option<f64>,
@@ -69,7 +70,7 @@ pub struct UpdateSalaryGradeRequest {
 }
 
 // Employee Models
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ToSchema)]
 pub struct Employee {
     pub id: String,
     pub first_name: String,
@@ -86,7 +87,7 @@ pub struct Employee {
     pub updated_at: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct CreateEmployeeRequest {
     pub first_name: String,
     pub last_name: String,
@@ -98,7 +99,7 @@ pub struct CreateEmployeeRequest {
     pub hire_date: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct UpdateEmployeeRequest {
     pub first_name: Option<String>,
     pub last_name: Option<String>,
@@ -111,12 +112,12 @@ pub struct UpdateEmployeeRequest {
     pub active: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct AssignManagerRequest {
     pub manager_id: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct AssignSalaryGradeRequest {
     pub salary_grade_id: String,
 }

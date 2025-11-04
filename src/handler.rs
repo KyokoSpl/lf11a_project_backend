@@ -6,6 +6,14 @@ use actix_web::{HttpResponse, Responder, get, post, web};
 use mysql::prelude::*;
 
 // Health check endpoint
+#[utoipa::path(
+    get,
+    path = "/health",
+    responses(
+        (status = 200, description = "Server health status", body = HealthResponse)
+    ),
+    tag = "Health"
+)]
 #[get("/health")]
 pub async fn health() -> impl Responder {
     let response = HealthResponse {
@@ -16,6 +24,15 @@ pub async fn health() -> impl Responder {
 }
 
 // Database endpoint - Get all users
+#[utoipa::path(
+    get,
+    path = "/api/users",
+    responses(
+        (status = 200, description = "List of all users", body = Vec<User>),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 #[get("/api/users")]
 pub async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
     let mut conn = match pool.get_conn() {
@@ -41,6 +58,19 @@ pub async fn get_users(pool: web::Data<DbPool>) -> impl Responder {
 }
 
 // Database endpoint - Get user by ID
+#[utoipa::path(
+    get,
+    path = "/api/users/{id}",
+    params(
+        ("id" = i32, Path, description = "User ID")
+    ),
+    responses(
+        (status = 200, description = "User found", body = User),
+        (status = 404, description = "User not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 #[get("/api/users/{id}")]
 pub async fn get_user_by_id(pool: web::Data<DbPool>, id: web::Path<i32>) -> impl Responder {
     let mut conn = match pool.get_conn() {
@@ -70,6 +100,16 @@ pub async fn get_user_by_id(pool: web::Data<DbPool>, id: web::Path<i32>) -> impl
 }
 
 // Database endpoint - Create user
+#[utoipa::path(
+    post,
+    path = "/api/users",
+    request_body = CreateUserRequest,
+    responses(
+        (status = 201, description = "User created successfully"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "Users"
+)]
 #[post("/api/users")]
 pub async fn create_user(
     pool: web::Data<DbPool>,
