@@ -459,7 +459,3 @@ curl -X POST http://127.0.0.1:8080/api/departments \
     "head_id": "750e8400-e29b-41d4-a716-446655440010"
   }'
 ```
-
-## License
-
-MIT
